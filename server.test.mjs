@@ -1,9 +1,23 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createWeatherServer } from './server.mjs';
+import { request } from 'node:http';
 
 test('server refuses to run without a configured key', () => {
   assert.throws(() => createWeatherServer(), /OPENWEATHER_API_KEY/);
+});
+
+test('malformed absolute request URLs are rejected without terminating the server', async () => {
+  const server = createWeatherServer({ apiKey: 'dummy-test-credential' });
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  try {
+    const status = await new Promise((resolve, reject) => {
+      const req = request({ hostname: '127.0.0.1', port: server.address().port, path: 'http://[' }, res => { res.resume(); resolve(res.statusCode); });
+      req.on('error', reject); req.end();
+    });
+    assert.equal(status, 400);
+    assert.equal((await fetch(`http://127.0.0.1:${server.address().port}/`)).status, 200);
+  } finally { await new Promise(resolve => server.close(resolve)); }
 });
 
 test('fixed weather proxy keeps the credential server-side, caches and limits requests', async () => {

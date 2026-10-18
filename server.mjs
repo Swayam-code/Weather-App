@@ -20,7 +20,9 @@ export function createWeatherServer({ apiKey, fetchImpl = fetch, now = Date.now 
   };
   return http.createServer(async (req, res) => {
     if (req.method !== 'GET') return json(res, 405, { error: 'Method not allowed.' });
-    const url = new URL(req.url, 'http://localhost');
+    let url;
+    try { url = new URL(req.url, 'http://localhost'); }
+    catch { return json(res, 400, { error: 'Invalid request URL.' }); }
     if (url.pathname === '/api/weather') {
       const city = url.searchParams.get('city')?.trim();
       if (!city || city.length > 80 || !/^[\p{L}\p{M}\p{N} .,'’()-]+$/u.test(city)) {
