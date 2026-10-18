@@ -1,20 +1,14 @@
 let weather = {
-  apiKey: "0f34752b81628fcb900da5a97a263c64",
   fetchWeather: function (city) {
-    fetch(
-      "https://api.openweathermap.org/data/2.5/weather?q=" +
-        city +
-        "&units=metric&appid=" +
-        this.apiKey
-    )
+    fetch("/api/weather?city=" + encodeURIComponent(city))
       .then((response) => {
         if (!response.ok) {
-          alert("No weather found.");
           throw new Error("No weather found.");
         }
         return response.json();
       })
-      .then((data) => this.displayWeather(data));
+      .then((data) => this.displayWeather(data))
+      .catch(() => { alert("Unable to load weather. Please try again."); });
   },
   displayWeather: function (data) {
     const { name } = data;
